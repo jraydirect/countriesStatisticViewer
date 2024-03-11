@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stylish Country Picker Widget</title>
+<style>
+    :root {
+        --primary-gradient-start: #6dd5ed;
+        --primary-gradient-end: #2193b0;
+        --text-color: #black;
+        --box-shadow: 8px 8px 15px #a7a7a7, -8px -8px 15px #ffffff;
+    }
+
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(to right, var(--primary-gradient-start), var(--primary-gradient-end));
+        color: var(--text-color);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .widget-container {
+        background: #ececec;
+        border-radius: 25px;
+        padding: 20px;
+        box-shadow: var(--box-shadow);
+        transition: all 0.3s ease-in-out;
+    }
+
+    .widget-container:hover {
+        box-shadow: 5px 5px 10px #a7a7a7, -5px -5px 10px #ffffff;
+    }
+
+    h2, h3 {
+        text-align: center;
+        color: var(--text-color);
+    }
+
+    select {
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 20px;
+        border: none;
+        font-size: 16px;
+        box-shadow: inset 2px 2px 5px #a7a7a7, inset -2px -2px 5px #ffffff;
+        background: transparent;
+        color: var(--text-color);
+    }
+
+    .info {
+        background: #ececec;
+        padding: 15px;
+        border-radius: 20px;
+        box-shadow: inset 2px 2px 5px #a7a7a7, inset -2px -2px 5px #ffffff;
+        color: var(--text-color);
+    }
+
+    .info p {
+        margin: 10px 0;
+    }
+
+    #flag {
+        max-width: 100px;
+        display: block;
+        margin: 20px auto;
+        border-radius: 10px;
+        box-shadow: 2px 2px 5px #a7a7a7, -2px -2px 5px #ffffff;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .fade-in {
+        animation: fadeIn 1s ease-in-out;
+    }
+</style>
+</head>
+<body>
+<div class="widget-container fade-in">
+    <h2>Country Statistics Viewer</h2>
+    <select id="country-select">
+        <option value="">Select a country</option>
+    </select>
+    <div id="country-info" class="info">
+        <h3>Country Information</h3>
+        <p><strong>Capital:</strong> <span id="capital">Please select a country</span></p>
+        <p><strong>Population:</strong> <span id="population"></span></p>
+        <p><strong>Region:</strong> <span id="region"></span></p>
+        <p><strong>Languages:</strong> <span id="languages"></span></p>
+        <p><strong>Currency:</strong> <span id="currency"></span></p>
+        <p><strong>Area:</strong> <span id="area"></span> km<sup>2</sup></p>
+        <p><strong>Timezones:</strong> <span id="timezones"></span></p>
+        <p><strong>Borders:</strong> <span id="borders"></span></p>
+        <img src="" alt="Flag" id="flag">
+    </div>
+</div>
+
+    <script>
+        const countrySelect = document.getElementById('country-select');
+        const capitalElement = document.getElementById('capital');
+        const populationElement = document.getElementById('population');
+        const regionElement = document.getElementById('region');
+        const languagesElement = document.getElementById('languages');
+        const currencyElement = document.getElementById('currency');
+        const areaElement = document.getElementById('area');
+        const timezonesElement = document.getElementById('timezones');
+        const bordersElement = document.getElementById('borders');
+        const flagElement = document.getElementById('flag');
+
+        // Fetch country data from REST Countries API
+        fetch('https://restcountries.com/v3.1/all')
+            .then(response => response.json())
+            .then(data => {
+                // Populate dropdown menu with country names
+                data.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country.name.common;
+                    option.textContent = country.name.common;
+                    countrySelect.appendChild(option);
+                });
+
+                // Event listener for when a country is selected
+                countrySelect.addEventListener('change', () => {
+                    const selectedCountry = countrySelect.value;
+                    const countryData = data.find(country => country.name.common === selectedCountry);
+
+                    // Display country information
+                    capitalElement.textContent = countryData.capital ? countryData.capital[0] : 'N/A';
+                    populationElement.textContent = countryData.population ? countryData.population.toLocaleString() : 'N/A';
+                    regionElement.textContent = countryData.region || 'N/A';
+                    languagesElement.textContent = countryData.languages ? Object.values(countryData.languages).join(', ') : 'N/A';
+                    currencyElement.textContent = countryData.currencies ? `${Object.values(countryData.currencies)[0].symbol} (${Object.values(countryData.currencies)[0].name})` : 'N/A';
+                    areaElement.textContent = countryData.area ? countryData.area.toLocaleString() : 'N/A';
+                    timezonesElement.textContent = countryData.timezones ? countryData.timezones.join(', ') : 'N/A';
+                    bordersElement.textContent = countryData.borders ? countryData.borders.join(', ') : 'N/A';
+
+                    // Fetch current time in the country's capital
+                    fetch(`https://worldtimeapi.org/api/timezone/${countryData.timezones[0]}`)
+                        .then(response => response.json())
+                        .then(timeData => {
+                            const currentTime = new Date(timeData.utc_datetime);
+                            flagElement.src = countryData.flags ? Object.values(countryData.flags)[0] : '';
+                            flagElement.alt = `${selectedCountry} Flag`;
+                        })
+                        .catch(error => console.log('Error fetching current time:', error));
+                });
+            })
+            .catch(error => console.log('Error fetching countries:', error));
+    </script>
+</body>
+</html>
